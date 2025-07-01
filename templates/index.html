@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MolView 分子结构可视化器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f5f5f5;
+            padding-top: 40px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 300px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 16px;
+            margin-left: 10px;
+            border-radius: 4px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        img {
+            margin-top: 20px;
+            border: 1px solid #aaa;
+            padding: 10px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 MolView 分子结构可视化器</h1>
+
+    <form method="post">
+        <input type="text" name="compound" placeholder="例如：benzene 或 C6H6" required>
+        <button type="submit">生成结构图</button>
+    </form>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if img_data %}
+        <h2>结构图：</h2>
+        <img src="data:image/png;base64,{{ img_data }}" alt="Molecule Structure">
+        <p><a href="/download"><button>📥 下载结构图</button></a></p>
+    {% endif %}
+</body>
+</html>
