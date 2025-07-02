@@ -11,19 +11,22 @@ app.secret_key = "something_secret"
 
 # ✅ 新版查询函数：支持名称和分子式自动判断
 def get_smiles(query):
-    # 先尝试名称
+    # 尝试按名称查询
     name_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{query}/property/CanonicalSMILES/TXT"
     response = requests.get(name_url)
     if response.status_code == 200:
         return response.text.strip()
 
-    # 再尝试分子式
+    # 尝试按分子式查询，并只取第一行
     formula_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/{query}/property/CanonicalSMILES/TXT"
     response = requests.get(formula_url)
     if response.status_code == 200:
-        return response.text.strip()
+        smiles_list = response.text.strip().split("\n")
+        if smiles_list:
+            return smiles_list[0]
 
     return None
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
