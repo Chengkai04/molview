@@ -4,15 +4,25 @@ from rdkit.Chem import Draw
 import io
 import base64
 import requests
+import os
 
 app = Flask(__name__)
-app.secret_key = "something_secret"  # required for session
+app.secret_key = "something_secret"
 
-def get_smiles_from_name(name):
-    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/property/CanonicalSMILES/TXT"
-    response = requests.get(url)
+# ✅ 新版查询函数：支持名称和分子式自动判断
+def get_smiles(query):
+    # 先尝试名称
+    name_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{query}/property/CanonicalSMILES/TXT"
+    response = requests.get(name_url)
     if response.status_code == 200:
         return response.text.strip()
+
+    # 再尝试分子式
+    formula_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/{query}/property/CanonicalSMILES/TXT"
+    response = requests.get(formula_url)
+    if response.status_code == 200:
+        return response.text.strip()
+
     return None
 
 @app.route("/", methods=["GET", "POST"])
@@ -22,22 +32,20 @@ def index():
 
     if request.method == "POST":
         query = request.form["compound"]
-        smiles = get_smiles_from_name(query)
+        smiles = get_smiles(query)
 
         if smiles:
             mol = Chem.MolFromSmiles(smiles)
             img = Draw.MolToImage(mol)
 
-            # 保存图片到内存中
             buf = io.BytesIO()
             img.save(buf, format="PNG")
             buf.seek(0)
 
-            # 编码 base64 用于网页显示
             img_data = base64.b64encode(buf.getvalue()).decode("utf-8")
-            session["image_bytes"] = base64.b64encode(buf.getvalue()).decode("utf-8")  # 保存图像内容
+            session["image_bytes"] = img_data
         else:
-            error = "❌ 没有找到该化合物"
+            error = "❌ 没有找到该化合物，请确认名称或分子式是否正确"
 
     return render_template("index.html", img_data=img_data, error=error)
 
@@ -46,14 +54,11 @@ def download_image():
     if "image_bytes" not in session:
         return "No image available", 400
 
-    # 从 session 中读取 base64 并转回字节
     image_bytes = base64.b64decode(session["image_bytes"])
     buf = io.BytesIO(image_bytes)
     buf.seek(0)
     return send_file(buf, mimetype="image/png", as_attachment=True, download_name="molecule.png")
 
 if __name__ == "__main__":
-    import os
-port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port)
-
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
