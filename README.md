@@ -18,6 +18,10 @@ MolView 是一个基于 Flask 构建的 Web 应用，允许用户输入分子名
 
 ## 💡 使用方法
 
+确保依赖已安装：
+
+pip install flask rdkit-pypi requests
+
 ```bash
 git clone https://github.com/Chengkai04/molview.git
 cd molview
@@ -59,3 +63,31 @@ python app.py
 
 ```bash
 python app.py
+
+
+2025-07-08
+🧬 页面新增展示内容：
+
+CID
+
+分子式（Molecular Formula）
+
+分子量（Molecular Weight）
+
+IUPAC 名称（IUPAC Name）
+
+Canonical SMILES 字符串
+
+📦 新增下载功能：
+
+📥 PNG 图片一键下载
+
+📥 SVG 矢量图一键下载
+
+🎨 页面 UI 大幅美化：
+
+引入 Bootstrap 5 实现响应式、现代化界面
+
+搜索时显示加载提示（loading 提示）
+
+结果区域以卡片方式美观呈现

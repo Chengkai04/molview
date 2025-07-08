@@ -3,64 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <title>MolView 分子结构可视化器</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
             background-color: #f5f5f5;
-            padding-top: 40px;
         }
-        form {
-            margin-bottom: 20px;
+        .molview-card {
+            max-width: 480px;
+            margin: 24px auto;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
         }
-        input[type="text"] {
-            padding: 8px;
-            width: 300px;
-            font-size: 16px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
+        .molview-logo {
+            font-size: 2.2rem;
         }
-        button {
-            padding: 8px 16px;
-            font-size: 16px;
-            margin-left: 10px;
-            border-radius: 4px;
-            border: none;
-            background-color: #4CAF50;
-            color: white;
-            cursor: pointer;
+        .molview-btns button {
+            margin-right: 8px;
+            margin-bottom: 8px;
         }
-        button:hover {
-            background-color: #45a049;
+        .molview-history, .molview-commons {
+            margin-bottom: 12px;
         }
-        img {
-            margin-top: 20px;
-            border: 1px solid #aaa;
-            padding: 10px;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .error {
-            color: red;
+        .molview-img {
+            background: #fff;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.04);
         }
     </style>
 </head>
 <body>
-    <h1>🧪 MolView 分子结构可视化器</h1>
+    <div class="container py-4">
+        <div class="text-center mb-4">
+            <span class="molview-logo">🧪</span>
+            <h1 class="fw-bold d-inline-block align-middle ms-2">MolView 分子结构可视化器</h1>
+        </div>
+        <div class="molview-card card p-4">
+            <form method="post" id="compound-form" onsubmit="showLoading()" class="mb-3">
+                <div class="input-group mb-2">
+                    <input type="text" name="compound" id="compound" class="form-control form-control-lg" placeholder="例如：benzene 或 C6H6" required>
+                    <button type="submit" id="submitBtn" class="btn btn-success btn-lg">生成结构图</button>
+                </div>
+                <div id="loading" style="display:none;" class="text-center text-secondary">🔍 正在搜索，请稍候...</div>
+            </form>
 
-    <form method="post">
-        <input type="text" name="compound" placeholder="例如：benzene 或 C6H6" required>
-        <button type="submit">生成结构图</button>
-    </form>
+            <!-- 常见化合物按钮 -->
+            <div class="molview-commons mb-2">
+                <span class="me-2">常见化合物：</span>
+                <span class="molview-btns">
+                {% for c in common_compounds %}
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="fillAndSubmit('{{ c }}')">{{ c }}</button>
+                {% endfor %}
+                </span>
+            </div>
 
-    {% if error %}
-        <p class="error">{{ error }}</p>
-    {% endif %}
+            <!-- 搜索历史 -->
+            {% if history and history|length > 0 %}
+            <div class="molview-history mb-2">
+                <span class="me-2">搜索历史：</span>
+                <span class="molview-btns">
+                {% for h in history %}
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillAndSubmit('{{ h }}')">{{ h }}</button>
+                {% endfor %}
+                </span>
+            </div>
+            {% endif %}
 
-    {% if img_data %}
-        <h2>结构图：</h2>
-        <img src="data:image/png;base64,{{ img_data }}" alt="Molecule Structure">
-        <p><a href="/download"><button>📥 下载结构图</button></a></p>
-    {% endif %}
+            <!-- 结果锚点 -->
+            <a id="result-anchor"></a>
+
+            {% if error %}
+                <div class="alert alert-danger text-center">{{ error }}</div>
+            {% endif %}
+
+            {% if img_data %}
+                <div class="text-center">
+                    <h5 class="mt-3">结构图</h5>
+                    <div class="molview-img d-inline-block my-2">
+                        <img src="data:image/png;base64,{{ img_data }}" alt="Molecule Structure" class="img-fluid" style="max-width:320px;">
+                    </div>
+                    <div class="d-flex justify-content-center gap-2 my-2">
+                        <a href="/download?smiles={{ smiles_q }}" class="btn btn-primary">📥 下载 PNG</a>
+                        <a href="/download_svg?smiles={{ smiles_q }}" class="btn btn-outline-primary">📥 下载 SVG</a>
+                    </div>
+                </div>
+                {% if cid %}
+                <div class="card mt-3 mx-auto" style="max-width: 350px;">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">分子信息</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>CID:</strong> {{ cid }}</li>
+                            <li class="list-group-item"><strong>分子式:</strong> {{ formula }}</li>
+                            <li class="list-group-item"><strong>分子量:</strong> {{ weight }}</li>
+                            <li class="list-group-item"><strong>Canonical SMILES:</strong> {{ canonical_smiles }}</li>
+                            <li class="list-group-item"><strong>IUPAC 名称:</strong> {{ iupac_name }}</li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function fillAndSubmit(val) {
+        document.getElementById('compound').value = val;
+        showLoading();
+        document.getElementById('compound-form').submit();
+    }
+    function showLoading() {
+        document.getElementById("submitBtn").disabled = true;
+        document.getElementById("submitBtn").innerText = "搜索中...";
+        document.getElementById("loading").style.display = "block";
+    }
+    window.onload = function() {
+        // 如果有结果区域，自动滚动到锚点
+        var hasResult = document.querySelector('.alert-danger') || document.querySelector('img[alt="Molecule Structure"]');
+        if (hasResult) {
+            document.getElementById("result-anchor").scrollIntoView({ behavior: "smooth" });
+        }
+    };
+    </script>
 </body>
 </html>
