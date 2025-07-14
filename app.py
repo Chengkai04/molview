@@ -9,8 +9,15 @@ import os
 import re
 from urllib.parse import quote_plus
 
+# 导入溶解度预测相关函数
+from predictor.predictor import load_model, predict_solubility
+
+
 app = Flask(__name__)
 app.secret_key = "something_secret"
+
+# 应用启动时加载模型
+model = load_model()
 
 COMMON_COMPOUNDS = [
     "water", "ethanol", "glucose", "benzene", "aspirin", "caffeine", "acetone", "sodium chloride"
@@ -130,12 +137,14 @@ def get_compound_info(query):
                 pass
 
     if cid and formula and weight:
+        predicted_solubility = predict_solubility(smiles, model)
         return {
             "cid": cid,
             "formula": formula,
             "weight": weight,
             "smiles": smiles,
             "iupac": iupac_name,
+            "predicted_solubility": predicted_solubility,
         }
 
     return None
@@ -181,6 +190,7 @@ def index():
         weight=info.get("weight"),
         canonical_smiles=info.get("smiles"),
         iupac_name=info.get("iupac"),
+        predicted_solubility=info.get("predicted_solubility"),
         smiles_q=quote_plus(info.get("smiles") or "") if info else None,
         history=history,
         common_compounds=COMMON_COMPOUNDS,
