@@ -1,3 +1,6 @@
 flask
 requests
 rdkit
+joblib
+scikit-learn
+numpy
